@@ -2,6 +2,7 @@ import pytesseract
 from PIL import Image
 import os
 import cv2
+from cv2 import dnn_superres
 
 # Set up Tesseract OCR
 pytesseract.pytesseract.tesseract_cmd = r"C:\Program Files\Tesseract-OCR\tesseract.exe"
@@ -30,6 +31,18 @@ def grayscale(image_name, img_path, target):
     bnw_image_path = target + "\\" + image_name + "bnw.png"
     cv2.imwrite(bnw_image_path, bnw_image)
     return bnw_image_path
+
+
+def upscaling(image_name, img_path, target):
+    sr = dnn_superres.DnnSuperResImpl_create()
+    image = cv2.imread(img_path)
+    path = "E:\Code\FGO_mats_extraction\EDSR_x2.pb"
+    sr.readModel(path)
+    sr.setModel("edsr", 2)
+    upscaled_image = sr.upsample(image)
+    upscaled_image_path = target + "\\" + image_name + "up.png"
+    cv2.imwrite(upscaled_image_path, upscaled_image)
+    return upscaled_image_path
 
 
 # Set the directory containing the images
