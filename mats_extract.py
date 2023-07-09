@@ -1,6 +1,7 @@
 import pytesseract
 from PIL import Image
 import os
+import cv2
 
 # Set up Tesseract OCR
 pytesseract.pytesseract.tesseract_cmd = r"C:\Program Files\Tesseract-OCR\tesseract.exe"
@@ -16,8 +17,24 @@ def extract_text_from_image(image_path):
     else:
         print('No text found in the image.')
 
+def invert(image_name, img_path, target):
+    img = cv2.imread(img_path)
+    inverted_image = cv2.bitwise_not(img)
+    inverted_image_path = target + "\\" + image_name + "inverted.png"
+    cv2.imwrite(inverted_image_path, inverted_image)
+    return inverted_image_path
+
+def grayscale(image_name, img_path, target):
+    img = cv2.imread(img_path)
+    bnw_image = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+    bnw_image_path = target + "\\" + image_name + "bnw.png"
+    cv2.imwrite(bnw_image_path, bnw_image)
+    return bnw_image_path
+
+
 # Set the directory containing the images
 images_dir = 'E:\Code\FGO_mats_extraction\screenshots'
+preprocessing_dir = 'E:\Code\FGO_mats_extraction\preprocess'
 
 # Iterate over all image files in the directory
 for filename in os.listdir(images_dir):
@@ -26,5 +43,20 @@ for filename in os.listdir(images_dir):
         file_path = os.path.join(images_dir, filename)
 
         print("file: " + filename)
-
+        print(file_path)
         extract_text_from_image(file_path)
+
+        # invert
+        inverted_file_path = invert(filename, file_path, preprocessing_dir)
+        print(inverted_file_path)
+        extract_text_from_image(inverted_file_path)
+
+        # bnw
+        bnw_file_path = grayscale(filename, file_path, preprocessing_dir)
+        print(bnw_file_path)
+        extract_text_from_image(bnw_file_path)
+
+        # bnw -> invert
+        bnw_invert_filepath = invert(filename + "bnw", bnw_file_path, preprocessing_dir)
+        print(bnw_invert_filepath)
+        extract_text_from_image(bnw_file_path)
