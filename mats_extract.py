@@ -22,9 +22,10 @@ def extract_text_from_image(image_path):
 def invert(image_name, img_path, target):
     img = cv2.imread(img_path)
     inverted_image = cv2.bitwise_not(img)
-    inverted_image_path = target + "\\" + image_name + "inverted.png"
-    cv2.imwrite(inverted_image_path, inverted_image)
-    return inverted_image_path
+    bnw_inverted_image = cv2.cvtColor(inverted_image, cv2.COLOR_BGR2GRAY)
+    bnw_inverted_image_path = target + "\\" + image_name + "inverted.png"
+    cv2.imwrite(bnw_inverted_image_path, bnw_inverted_image)
+    return bnw_inverted_image_path
 
 def grayscale(image_name, img_path, target):
     img = cv2.imread(img_path)
@@ -72,7 +73,7 @@ def search_and_crop_image(image_path, search_image_path, name_dimensions, count_
             # Get the coordinates of the matched region
             name_top_left = (pt[0] - name_dimensions[0], pt[1] - name_dimensions[1])
             name_bottom_right = (pt[0] + count_dimensions[0], pt[1])
-            count_top_left = (pt[0], pt[1] + 30)
+            count_top_left = (pt[0] + 77, pt[1])
             count_bottom_right = (pt[0] + count_dimensions[0], pt[1] + count_dimensions[1])
 
             if name_top_left[0] >= 0 and name_top_left[1] >= 0 and name_bottom_right[0] <= image.shape[1] and name_bottom_right[1] <= image.shape[0]:
@@ -105,7 +106,7 @@ def convert_image_to_text(images_dir, crops_dir, preprocessing_dir):
             file_path = os.path.join(crops_dir, filename)
 
             # bnw
-            bnw_file_path = grayscale(filename, file_path, preprocessing_dir)
+            bnw_file_path = invert(filename, file_path, preprocessing_dir)
             print(bnw_file_path)
             extract_text_from_image(bnw_file_path)
             
@@ -116,6 +117,9 @@ crops_dir = 'E:\Code\FGO_mats_extraction\crops'
 preprocessing_dir = 'E:\Code\FGO_mats_extraction\preprocess'
 held_img = 'E:\Code\FGO_mats_extraction\screenshots\held.jpg'
 material_name_dimensions = (20, 84)
-material_count_dimensions = (450, 80)
+material_count_dimensions = (390, 77)
 
 convert_image_to_text(images_dir, crops_dir, preprocessing_dir)
+extract_text_from_image(invert('test', "E:\Code\FGO_mats_extraction\preprocess\screenshot1.png", preprocessing_dir))
+extract_text_from_image(invert('test2', "E:\Code\FGO_mats_extraction\preprocess\screenshot4.png", preprocessing_dir))
+extract_text_from_image(invert('test2', "E:\Code\FGO_mats_extraction\preprocess\screenshot5.png", preprocessing_dir))
