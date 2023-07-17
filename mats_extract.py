@@ -21,11 +21,26 @@ def extract_text_from_image(image_path):
 
 def invert(image_name, img_path, target):
     img = cv2.imread(img_path)
+    # inverts the image colors
     inverted_image = cv2.bitwise_not(img)
+    # turns into grayscale
     bnw_inverted_image = cv2.cvtColor(inverted_image, cv2.COLOR_BGR2GRAY)
-    bnw_inverted_image_path = target + "\\" + image_name + "inverted.png"
-    cv2.imwrite(bnw_inverted_image_path, bnw_inverted_image)
-    return bnw_inverted_image_path
+    # removes noise
+    kernel = np.ones((1, 1), np.uint8)
+    nr_bnw_inverted_image = cv2.dilate(bnw_inverted_image, kernel, iterations=1)
+    nr_bnw_inverted_image = cv2.erode(nr_bnw_inverted_image, kernel, iterations=1)
+    nr_bnw_inverted_image = cv2.morphologyEx(nr_bnw_inverted_image, cv2.MORPH_CLOSE, kernel)
+    nr_bnw_inverted_image = cv2.medianBlur(nr_bnw_inverted_image, 3)
+    # removes borders
+    contours, heirarchy = cv2.findContours(nr_bnw_inverted_image, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+    cntsSorted = sorted(contours, key=lambda x:cv2.contourArea(x))
+    cnt = cntsSorted[-1]
+    x, y, w, h = cv2.boundingRect(cnt)
+    nb_nr_bnw_inverted_image = nr_bnw_inverted_image[y:y+h, x:x+w]
+
+    nb_nr_bnw_inverted_image_path = target + "\\" + image_name + "NB_NR_BNW_inverted.png"
+    cv2.imwrite(nb_nr_bnw_inverted_image_path, nb_nr_bnw_inverted_image)
+    return nb_nr_bnw_inverted_image_path
 
 def grayscale(image_name, img_path, target):
     img = cv2.imread(img_path)
@@ -45,6 +60,26 @@ def upscaling(image_name, img_path, target):
     upscaled_image_path = target + "\\" + image_name + "up.png"
     cv2.imwrite(upscaled_image_path, upscaled_image)
     return upscaled_image_path
+
+def noise_removal(image_name, img_path, target):
+    image = cv2.imread(img_path)
+    kernel = np.ones((1, 1), np.uint8)
+    image = cv2.dilate(image, kernel, iterations=1)
+    kernel = np.ones((1, 1), np.uint8)
+    image = cv2.erode(image, kernel, iterations=1)
+    image = cv2.morphologyEx(image, cv2.MORPH_CLOSE, kernel)
+    nr_image = cv2.medianBlur(image, 3)
+    nr_image_path = target + "\\" + image_name + "NR.png"
+    cv2.imwrite(nr_image_path, nr_image)
+    return (nr_image_path)
+
+def remove_borders(image):
+    contours, heirarchy = cv2.findContours(image, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+    cntsSorted = sorted(contours, key=lambda x:cv2.contourArea(x))
+    cnt = cntsSorted[-1]
+    x, y, w, h = cv2.boundingRect(cnt)
+    crop = image[y:y+h, x:x+w]
+    return (crop)
 
 
 def search_and_crop_image(image_path, search_image_path, name_dimensions, count_dimensions, target):
@@ -105,10 +140,12 @@ def convert_image_to_text(images_dir, crops_dir, preprocessing_dir):
             # Construct the full file path
             file_path = os.path.join(crops_dir, filename)
 
-            # bnw
-            bnw_file_path = invert(filename, file_path, preprocessing_dir)
-            print(bnw_file_path)
-            extract_text_from_image(bnw_file_path)
+            # inverted and bnw
+            preprocessed_file_path = invert(filename, file_path, preprocessing_dir)
+            print(preprocessed_file_path)
+            extract_text_from_image(preprocessed_file_path)
+
+
             
 
 # Set the directory containing the images
