@@ -25,22 +25,31 @@ def invert(image_name, img_path, target):
     inverted_image = cv2.bitwise_not(img)
     # turns into grayscale
     bnw_inverted_image = cv2.cvtColor(inverted_image, cv2.COLOR_BGR2GRAY)
+
+    # sharpened
+    sharpen_kernel = np.array([[0,-1,0], [-1,5,-1], [0,-1,0]])
+    sharpen = cv2.filter2D(bnw_inverted_image, -1, sharpen_kernel)
+    sharp_bnw_inverted_image = cv2.threshold(sharpen, 0, 255, cv2.THRESH_BINARY_INV + cv2.THRESH_OTSU)[1]
+
     # removes noise
     kernel = np.ones((1, 1), np.uint8)
-    nr_bnw_inverted_image = cv2.dilate(bnw_inverted_image, kernel, iterations=1)
+    nr_bnw_inverted_image = cv2.dilate(sharp_bnw_inverted_image, kernel, iterations=1)
     nr_bnw_inverted_image = cv2.erode(nr_bnw_inverted_image, kernel, iterations=1)
     nr_bnw_inverted_image = cv2.morphologyEx(nr_bnw_inverted_image, cv2.MORPH_CLOSE, kernel)
     nr_bnw_inverted_image = cv2.medianBlur(nr_bnw_inverted_image, 3)
-    # removes borders
-    contours, heirarchy = cv2.findContours(nr_bnw_inverted_image, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-    cntsSorted = sorted(contours, key=lambda x:cv2.contourArea(x))
-    cnt = cntsSorted[-1]
-    x, y, w, h = cv2.boundingRect(cnt)
-    nb_nr_bnw_inverted_image = nr_bnw_inverted_image[y:y+h, x:x+w]
 
-    nb_nr_bnw_inverted_image_path = target + "\\" + image_name + "NB_NR_BNW_inverted.png"
-    cv2.imwrite(nb_nr_bnw_inverted_image_path, nb_nr_bnw_inverted_image)
-    return nb_nr_bnw_inverted_image_path
+    blur_nr_bnw_inverted_image = cv2.bilateralFilter(nr_bnw_inverted_image,9,75,75)
+
+    # removes borders
+    # contours, heirarchy = cv2.findContours(nr_bnw_inverted_image, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+    # cntsSorted = sorted(contours, key=lambda x:cv2.contourArea(x))
+    # cnt = cntsSorted[-1]
+    # x, y, w, h = cv2.boundingRect(cnt)
+    # nb_nr_bnw_inverted_image = nr_bnw_inverted_image[y:y+h, x:x+w]
+
+    blur_nr_bnw_inverted_image_path = target + "\\" + image_name + "NB_NR_BNW_inverted.png"
+    cv2.imwrite(blur_nr_bnw_inverted_image_path, blur_nr_bnw_inverted_image)
+    return blur_nr_bnw_inverted_image_path
 
 def grayscale(image_name, img_path, target):
     img = cv2.imread(img_path)
@@ -108,7 +117,7 @@ def search_and_crop_image(image_path, search_image_path, name_dimensions, count_
             # Get the coordinates of the matched region
             name_top_left = (pt[0] - name_dimensions[0], pt[1] - name_dimensions[1])
             name_bottom_right = (pt[0] + count_dimensions[0], pt[1])
-            count_top_left = (pt[0] + 77, pt[1])
+            count_top_left = (pt[0] + 150, pt[1] + 20)
             count_bottom_right = (pt[0] + count_dimensions[0], pt[1] + count_dimensions[1])
 
             if name_top_left[0] >= 0 and name_top_left[1] >= 0 and name_bottom_right[0] <= image.shape[1] and name_bottom_right[1] <= image.shape[0]:
@@ -154,9 +163,6 @@ crops_dir = 'E:\Code\FGO_mats_extraction\crops'
 preprocessing_dir = 'E:\Code\FGO_mats_extraction\preprocess'
 held_img = 'E:\Code\FGO_mats_extraction\screenshots\held.jpg'
 material_name_dimensions = (20, 84)
-material_count_dimensions = (390, 77)
+material_count_dimensions = (400, 77)
 
 convert_image_to_text(images_dir, crops_dir, preprocessing_dir)
-extract_text_from_image(invert('test', "E:\Code\FGO_mats_extraction\preprocess\screenshot1.png", preprocessing_dir))
-extract_text_from_image(invert('test2', "E:\Code\FGO_mats_extraction\preprocess\screenshot4.png", preprocessing_dir))
-extract_text_from_image(invert('test2', "E:\Code\FGO_mats_extraction\preprocess\screenshot5.png", preprocessing_dir))
